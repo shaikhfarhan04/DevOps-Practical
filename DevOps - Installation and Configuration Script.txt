@@ -1,0 +1,234 @@
+#!/bin/bash
+
+###############################################################################
+# DevOps Lab Environment Setup Script
+# OS: Amazon Linux 2023
+# Author: Your Name
+###############################################################################
+
+set -e
+
+echo "======================================"
+echo " DevOps Lab Setup Started"
+echo "======================================"
+
+############################
+# Update System
+############################
+echo "Updating system..."
+sudo dnf update -y
+
+############################
+# Install Basic Packages
+############################
+echo "Installing basic packages..."
+
+sudo dnf install -y \
+git \
+python3 \
+python3-pip \
+docker \
+wget \
+curl \
+tar \
+make \
+zip \
+unzip \
+jq \
+dnf-plugins-core
+
+############################
+# Configure Git
+############################
+
+echo "Configuring Git..."
+
+git config --global user.name "YOUR_NAME"
+git config --global user.email "YOUR_EMAIL@example.com"
+
+############################
+# Docker
+############################
+
+echo "Installing and configuring Docker..."
+
+sudo systemctl enable docker
+sudo systemctl start docker
+
+sudo usermod -aG docker ec2-user
+
+############################
+# Java 21
+############################
+
+echo "Installing Java 21..."
+
+sudo dnf install java-21-amazon-corretto -y
+
+############################
+# Jenkins
+############################
+
+echo "Installing Jenkins..."
+
+sudo wget -O /etc/yum.repos.d/jenkins.repo \
+https://pkg.jenkins.io/redhat-stable/jenkins.repo
+
+sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
+
+sudo dnf install jenkins -y
+
+sudo systemctl enable jenkins
+sudo systemctl start jenkins
+
+############################
+# Terraform
+############################
+
+echo "Installing Terraform..."
+
+sudo dnf config-manager addrepo \
+--from-repofile=https://rpm.releases.hashicorp.com/AmazonLinux/hashicorp.repo
+
+sudo dnf install terraform -y
+
+############################
+# AWS CLI
+############################
+
+echo "Installing AWS CLI (if missing)..."
+
+if ! command -v aws &> /dev/null
+then
+    sudo dnf install awscli -y
+else
+    echo "AWS CLI already installed."
+fi
+
+############################
+# Grafana
+############################
+
+echo "Installing Grafana..."
+
+sudo tee /etc/yum.repos.d/grafana.repo > /dev/null <<EOF
+[grafana]
+name=Grafana
+baseurl=https://rpm.grafana.com
+repo_gpgcheck=1
+enabled=1
+gpgcheck=1
+gpgkey=https://rpm.grafana.com/gpg.key
+sslverify=1
+EOF
+
+sudo dnf install grafana-enterprise -y
+
+sudo systemctl enable grafana-server
+sudo systemctl start grafana-server
+
+############################
+# Ansible
+############################
+
+echo "Installing Ansible..."
+
+sudo dnf install ansible -y
+
+############################
+# Verification
+############################
+
+echo
+echo "======================================"
+echo "Installed Software Versions"
+echo "======================================"
+
+echo
+echo "Git:"
+git --version
+
+echo
+echo "Python:"
+python3 --version
+
+echo
+echo "Pip:"
+pip3 --version
+
+echo
+echo "AWS CLI:"
+aws --version
+
+echo
+echo "Docker:"
+docker --version
+
+echo
+echo "Terraform:"
+terraform --version
+
+echo
+echo "Java:"
+java -version
+
+echo
+echo "Ansible:"
+ansible --version
+
+echo
+echo "Grafana:"
+grafana-server -v
+
+echo
+echo "======================================"
+echo "Service Status"
+echo "======================================"
+
+echo
+echo "Docker"
+sudo systemctl --no-pager status docker
+
+echo
+echo "Jenkins"
+sudo systemctl --no-pager status jenkins
+
+echo
+echo "Grafana"
+sudo systemctl --no-pager status grafana-server
+
+echo
+echo "======================================"
+echo "Jenkins Initial Admin Password"
+echo "======================================"
+
+if [ -f /var/lib/jenkins/secrets/initialAdminPassword ]; then
+    sudo cat /var/lib/jenkins/secrets/initialAdminPassword
+else
+    echo "Jenkins password file not found."
+fi
+
+echo
+echo "======================================"
+echo "Git Configuration"
+echo "======================================"
+
+git config --global --list
+
+echo
+echo "======================================"
+echo "Setup Completed Successfully!"
+echo "======================================"
+
+echo
+echo "Reconnect to your EC2 instance for Docker group changes to take effect."
+
+echo
+echo "Access URLs:"
+echo "--------------------------------------"
+echo "Jenkins : http://<EC2-PUBLIC-IP>:8080"
+echo "Grafana : http://<EC2-PUBLIC-IP>:3000"
+echo
+echo "Grafana Default Login"
+echo "Username : admin"
+echo "Password : admin"
